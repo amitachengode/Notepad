@@ -2,6 +2,9 @@
     "notes": [],
     "settings": {
         "theme": "dark",
-        "color_scheme": "blue"
+        "color-scheme": "blue",
+        "heading-font-size": 40,
+        "body-font-size": 18,
+        "font-family": "Arial"
     }
 }

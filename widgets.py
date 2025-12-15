@@ -1,5 +1,7 @@
 import customtkinter as ctk
+import tkinter.font as tkf
 from functions import get_timestamp, read, write
+import tkinter.messagebox as tkm
 
 class EntryWidget(ctk.CTkFrame):
     def __init__(self, title: str, master: ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, **kwargs):
@@ -43,7 +45,6 @@ class EntryWidget(ctk.CTkFrame):
         self.status_label.configure(text="")
         self.entry.configure(border_color="gray")
 
-
 class File(ctk.CTkFrame):
     def __init__(self, title: str, timestamp: str, master: ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, **kwargs):
         super().__init__(master, **kwargs)
@@ -59,13 +60,13 @@ class File(ctk.CTkFrame):
         
 
 class FileFrame(ctk.CTkFrame):
-    def __init__(self, fileid:str, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, **kwargs):
+    def __init__(self, fileid:str, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, heading_font:ctk.CTkFont, body_font:ctk.CTkFont, **kwargs):
         super().__init__(master,**kwargs)
         self.id=fileid
         self.kwargs=kwargs
 
-        self.title = ctk.CTkEntry(self,placeholder_text="Title", width=550, height=50, font=ctk.CTkFont(size=35, weight="bold"))
-        self.content = ctk.CTkTextbox(self, width=680, height=500, font=ctk.CTkFont(size=25), wrap="word")
+        self.title = ctk.CTkEntry(self,placeholder_text="Title", width=550, height=50, font=heading_font)
+        self.content = ctk.CTkTextbox(self, width=680, height=500, font=body_font, wrap="word")
         self.save_button = ctk.CTkButton(self, text="💾", width=50, height=50, font=ctk.CTkFont(size=29))
         self.delete_button = ctk.CTkButton(self, text="❌", width=50, height=50, font=ctk.CTkFont(size=29))
 
@@ -88,6 +89,7 @@ class FileFrame(ctk.CTkFrame):
     def delete_note(self,cache):
         cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
         write(cache)
+        msg=tkm.showinfo("Note Deleted","The note has been deleted successfully.")
     
     def get_data(self):
         return [self.title.get(), self.content.get("1.0", ctk.END).strip()]
@@ -103,18 +105,43 @@ class FileFrame(ctk.CTkFrame):
                 break
 
 class SettingsFrame(ctk.CTkFrame):
-    def __init__(self, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, **kwargs):
+    def __init__(self, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame,header_font:ctk.CTkFont,body_font:ctk.CTkFont, **kwargs):
         super().__init__(master,**kwargs)
-        ctk.CTkLabel(self,text="Settings",font=ctk.CTkFont(size=40)).place(x=10,y=10)
+        ctk.CTkLabel(self,text="Settings",font=header_font).place(x=10,y=10)
 
-        ctk.CTkLabel(self,text="Theme:",font=ctk.CTkFont(size=20)).place(x=10,y=70)
-        self.theme=ctk.CTkOptionMenu(self,values=["light","dark"])
-        self.theme.place(x=90,y=70)
+        ctk.CTkLabel(self,text="Theme:",font=body_font,height=body_font.metrics("linespace")).place(x=10,y=body_font.metrics("linespace")+10+header_font.metrics("linespace"))
+        self.theme=ctk.CTkOptionMenu(self,values=["light","dark"],font=body_font)
+        self.theme.place(x=body_font.measure("Theme:")*1.25,y=(body_font.metrics("linespace")+10)+header_font.metrics("linespace"))
 
-        ctk.CTkLabel(self,text="Color Scheme:",font=ctk.CTkFont(size=20)).place(x=10,y=110)
-        self.color=ctk.CTkOptionMenu(self,values=["blue","green","dark-blue"])
-        self.color.place(x=150,y=110)
+        ctk.CTkLabel(self,text="Color Scheme:",font=body_font,height=body_font.metrics("linespace")).place(x=10,y=(body_font.metrics("linespace")+10)*2+header_font.metrics("linespace"))
+        self.color=ctk.CTkOptionMenu(self,values=["blue","green","dark-blue"],font=body_font)
+        self.color.place(x=body_font.measure("Color Scheme:")*1.25,y=(body_font.metrics("linespace")+10)*2+header_font.metrics("linespace") )
 
+        ctk.CTkLabel(self,text="Font family:",font=body_font,height=body_font.metrics("linespace")).place(x=10,y=(body_font.metrics("linespace")+10)*3+header_font.metrics("linespace"))
+        self.font_family=ctk.CTkOptionMenu(self,values=tkf.families(),font=body_font)
+        self.font_family.place(x=body_font.measure("Font family:")*1.25,y=(body_font.metrics("linespace")+10)*3+header_font.metrics("linespace"))
+
+        ctk.CTkLabel(self,text="Heading Font Size:",font=body_font,height=body_font.metrics("linespace")).place(x=10,y=(body_font.metrics("linespace")+10)*4+header_font.metrics("linespace"))
+        self.heading_font_size=ctk.CTkSlider(self,from_=35,to=60,number_of_steps=25,width=body_font.measure("Heading Font Size:")+50,
+                                             command=self.update_heading_font_label)
+        self.heading_font_size.place(x=body_font.measure("Heading Font Size:")*1.25,y=(body_font.metrics("linespace")+10)*4.125+header_font.metrics("linespace"))
+        self.heading_font_label=ctk.CTkLabel(self,text=f"{int(self.heading_font_size.get())} pt",font=body_font)
+        self.heading_font_label.place(x=(body_font.measure("Heading Font Size:")+10)*2.5,y=(body_font.metrics("linespace")+10)*4+header_font.metrics("linespace"))
+
+        ctk.CTkLabel(self,text="Body Font Size:",font=body_font,height=body_font.metrics("linespace")).place(x=10,y=(body_font.metrics("linespace")+10)*5+header_font.metrics("linespace"))
+        self.body_font_size=ctk.CTkSlider(self,from_=18,to=30,number_of_steps=12,width=body_font.measure("Body Font Size:")+50,
+                                             command=self.update_body_font_label)
+        self.body_font_size.place(x=body_font.measure("Body Font Size:")*1.25,y=(body_font.metrics("linespace")+10)*5.125+header_font.metrics("linespace"))
+        self.body_font_label=ctk.CTkLabel(self,text=f"{int(self.body_font_size.get())} pt",font=body_font)
+        self.body_font_label.place(x=(body_font.measure("Body Font Size:")+10)*2.5,y=(body_font.metrics("linespace")+10)*5+header_font.metrics("linespace"))
+        self.save=ctk.CTkButton(self,text="Save Settings",width=body_font.measure("Save Settings:")*1.25,height=50,font=body_font)
+        self.save.place(relx=0.5,y=kwargs["height"]-body_font.metrics("linespace")*2.1,anchor="center")
+
+    def update_heading_font_label(self,value):
+        self.heading_font_label.configure(text=f"{int(value)} pt")
+
+    def update_body_font_label(self,value):
+        self.body_font_label.configure(text=f"{int(value)} pt")
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -127,13 +154,16 @@ class App(ctk.CTk):
         self.geometry("800x600")
         self.title("Notebook")
         self.resizable(False,False)
-        ctk.set_default_color_theme(self.cache["settings"]["color_scheme"])
+        ctk.set_default_color_theme(self.cache["settings"]["color-scheme"])
         ctk.set_appearance_mode(self.cache["settings"]["theme"])
         self.colormap={
             "blue":"#007BB8",
             "green":"#00A651",
             "dark-blue":"#0057A3",
         }
+        self.header_font=ctk.CTkFont(size=self.cache["settings"]["heading-font-size"],family=self.cache["settings"]["font-family"])
+        self.body_font=ctk.CTkFont(size=self.cache["settings"]["body-font-size"],family=self.cache["settings"]["font-family"])
+
 
         self.side_bar=ctk.CTkFrame(self,width=70,height=580)
         self.side_bar.place(x=10,y=10)
@@ -150,21 +180,28 @@ class App(ctk.CTk):
         self.note=ctk.CTkFrame(self,width=700,height=580)
         self.note.place(x=90,y=10)
 
+        self.title=ctk.CTkLabel(self.note,text="Notes",font=self.header_font)
+        self.title.place(x=10,y=10)
+
         self.scrollframe=ctk.CTkScrollableFrame(self.note,width=690,height=580,bg_color="transparent",fg_color="transparent",border_width=0)
         self.scrollframe.place(x=0,y=90)
         self.scrollframe._scrollbar.configure(width=0)
 
-        self.noteframe=FileFrame(get_timestamp(),self,width=700,height=580)
+        self.noteframe=FileFrame(get_timestamp(),self,width=700,height=580,heading_font=self.header_font,body_font=self.body_font)
         self.noteframe.place(x=90,y=10)
         self.noteframe.save_button.configure(command=self.save_note)
         self.noteframe.delete_button.configure(command=lambda:self.noteframe.delete_note(self.cache) or self.to_home())
 
-        self.settings=SettingsFrame(self,width=700,height=580)
+        self.settings=SettingsFrame(self,width=700,height=580,header_font=self.header_font,body_font=self.body_font)
         self.settings.place(x=90,y=10)
-        self.settings.theme.configure(command=self.change_theme)
-        self.settings.color.configure(command=self.change_color_scheme)
         self.settings.theme.set(self.cache["settings"]["theme"])
-        self.settings.color.set(self.cache["settings"]["color_scheme"])
+        self.settings.color.set(self.cache["settings"]["color-scheme"])
+        self.settings.font_family.set(self.cache["settings"]["font-family"])
+        self.settings.heading_font_size.set(self.cache["settings"]["heading-font-size"])
+        self.settings.body_font_size.set(self.cache["settings"]["body-font-size"])
+        self.settings.heading_font_label.configure(text=f"{self.cache['settings']['heading-font-size']} pt")
+        self.settings.body_font_label.configure(text=f"{self.cache['settings']['body-font-size']} pt")
+        self.settings.save.configure(command=self.save_settings)
 
         self.note.tkraise()
         self.load_notes()
@@ -172,9 +209,9 @@ class App(ctk.CTk):
     def load_notes(self):
         for widget in self.scrollframe.winfo_children():
             widget.destroy()
-        color=self.colormap[self.cache["settings"]["color_scheme"]]
+        color=self.colormap[self.cache["settings"]["color-scheme"]]
         for note in self.cache.get("notes",[]):
-            file_widget=File(note["title"],note["timestamp"],self.scrollframe,height=80,fg_color=color,corner_radius=10)
+            file_widget=File(note["title"],note["timestamp"],self.scrollframe,height=80,fg_color=color,corner_radius=10,)
             file_widget.pack(padx=10,pady=5,fill="x",)
             file_widget.bind("<Button-1>",lambda event,note_id=note["id"]:self.open_note(note_id))
 
@@ -199,6 +236,7 @@ class App(ctk.CTk):
 
     def save_note(self):
         self.noteframe.save_note(self.cache)
+        msg=tkm.showinfo("Note Saved","Your note has been saved successfully.")
 
     def to_home(self):
         self.load_notes()
@@ -211,15 +249,15 @@ class App(ctk.CTk):
         for child in self.winfo_children():
             child.destroy()
 
-    def change_theme(self,event=None):
+    def save_settings(self):
         self.cache["settings"]["theme"]=self.settings.theme.get()
+        self.cache["settings"]["color-scheme"]=self.settings.color.get()
+        self.cache["settings"]["font-family"]=self.settings.font_family.get()
+        self.cache["settings"]["heading-font-size"]=int(self.settings.heading_font_size.get())
+        self.cache["settings"]["body-font-size"]=int(self.settings.body_font_size.get())
         write(self.cache)
-        ctk.set_appearance_mode(self.cache["settings"]["theme"])
-
-    def change_color_scheme(self,event=None):
-        self.cache["settings"]["color_scheme"]=self.settings.color.get()
-        write(self.cache)
-        ctk.set_default_color_theme(self.cache["settings"]["color_scheme"])
         self.kill_children()
+        ctk.set_default_color_theme(self.cache["settings"]["color-scheme"])
+        ctk.set_appearance_mode(self.cache["settings"]["theme"])
         self.load_widgets()
         self.settings.tkraise()
