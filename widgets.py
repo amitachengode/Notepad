@@ -79,11 +79,6 @@ class FileFrame(ctk.CTkFrame):
     def save_note(self,cache):
         for index,note in enumerate(cache["notes"]):
             if note["id"] == self.id:
-                '''
-                note["title"] = self.title.get()
-                note["content"] = self.content.get("1.0", ctk.END).strip()
-                note["timestamp"] = get_timestamp()
-                break'''
                 title, content = self.get_data()
                 if title == "" and content == "":
                     if cache["notes"][index]["title"] == "" and cache["notes"][index]["content"] == "":
