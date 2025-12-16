@@ -77,19 +77,46 @@ class FileFrame(ctk.CTkFrame):
 
 
     def save_note(self,cache):
-        for note in cache["notes"]:
+        for index,note in enumerate(cache["notes"]):
             if note["id"] == self.id:
+                '''
                 note["title"] = self.title.get()
                 note["content"] = self.content.get("1.0", ctk.END).strip()
                 note["timestamp"] = get_timestamp()
-                break
+                break'''
+                title, content = self.get_data()
+                if title == "" and content == "":
+                    if cache["notes"][index]["title"] == "" and cache["notes"][index]["content"] == "":
+                        tkm.showerror("New note", "Save the new note by providing a title or content.")
+                        del cache["notes"][index]
+                        write(cache)
+                    else:
+                        tkm.showinfo("Empty Note", "The note must have a title or content to be saved.")
+                elif title == "":
+                    tkm.showwarning("Missing Title", "Please provide a title for the note.")
+                    break
+                elif content == "":
+                    tkm.showwarning("Missing Content", "Please provide content for the note.")
+                    break
+                else:
+                    cache["notes"][index]["title"] = title
+                    cache["notes"][index]["content"] = content
+                    cache["notes"][index]["timestamp"] = get_timestamp()
+                    write(cache)
+                    tkm.showinfo("Note Saved", "The note has been saved successfully.")
+                    break
+                    
 
-        write(cache)
 
     def delete_note(self,cache):
-        cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
-        write(cache)
-        msg=tkm.showinfo("Note Deleted","The note has been deleted successfully.")
+        if tkm.askyesno("Delete Note", "Are you sure you want to delete this note?"):
+            cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
+            write(cache)
+            tkm.showinfo("Note Deleted", "The note has been deleted successfully.")
+        else:
+            if self.title.get()=="" and self.content.get("1.0", ctk.END).strip()=="":
+                cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
+                write(cache)
     
     def get_data(self):
         return [self.title.get(), self.content.get("1.0", ctk.END).strip()]
@@ -134,8 +161,8 @@ class SettingsFrame(ctk.CTkFrame):
         self.body_font_size.place(x=body_font.measure("Body Font Size:")*1.25,y=(body_font.metrics("linespace")+10)*5.125+header_font.metrics("linespace"))
         self.body_font_label=ctk.CTkLabel(self,text=f"{int(self.body_font_size.get())} pt",font=body_font)
         self.body_font_label.place(x=(body_font.measure("Body Font Size:")+10)*2.5,y=(body_font.metrics("linespace")+10)*5+header_font.metrics("linespace"))
-        self.save=ctk.CTkButton(self,text="Save Settings",width=body_font.measure("Save Settings:")*1.25,height=50,font=body_font)
-        self.save.place(relx=0.5,y=kwargs["height"]-body_font.metrics("linespace")*2.1,anchor="center")
+        self.save=ctk.CTkButton(self,text="Save Settings",width=kwargs["width"]-20,height=50,font=body_font)
+        self.save.place(relx=0.5,y=kwargs["height"]-40,anchor="center")
 
     def update_heading_font_label(self,value):
         self.heading_font_label.configure(text=f"{int(value)} pt")
@@ -170,18 +197,19 @@ class App(ctk.CTk):
 
         self.home=ctk.CTkButton(self.side_bar,text="\u2302",width=50,height=50,font=ctk.CTkFont(size=29),command=self.to_home)
         self.home.place(x=10,y=10)
+        self.home.configure(state="disabled")
 
         self.new=ctk.CTkButton(self.side_bar,text="+",width=50,height=50,command=self.new_note,font=ctk.CTkFont(size=29))
         self.new.place(x=10,y=70)
 
-        self.settings=ctk.CTkButton(self.side_bar,text="\u2261",width=50,height=50,font=ctk.CTkFont(size=29),command=self.open_settings)
-        self.settings.place(x=10,y=520)
+        self.setting=ctk.CTkButton(self.side_bar,text="\u2261",width=50,height=50,font=ctk.CTkFont(size=29),command=self.open_settings)
+        self.setting.place(x=10,y=520)
 
         self.note=ctk.CTkFrame(self,width=700,height=580)
         self.note.place(x=90,y=10)
 
-        self.title=ctk.CTkLabel(self.note,text="Notes",font=self.header_font)
-        self.title.place(x=10,y=10)
+        self.note_title=ctk.CTkLabel(self.note,text="Notes",font=self.header_font)
+        self.note_title.place(x=10,y=10)
 
         self.scrollframe=ctk.CTkScrollableFrame(self.note,width=690,height=580,bg_color="transparent",fg_color="transparent",border_width=0)
         self.scrollframe.place(x=0,y=90)
@@ -195,15 +223,20 @@ class App(ctk.CTk):
         self.settings=SettingsFrame(self,width=700,height=580,header_font=self.header_font,body_font=self.body_font)
         self.settings.place(x=90,y=10)
         self.settings.theme.set(self.cache["settings"]["theme"])
+        self.settings.theme.configure(command=self.check_settings_state)
         self.settings.color.set(self.cache["settings"]["color-scheme"])
+        self.settings.color.configure(command=self.check_settings_state)
         self.settings.font_family.set(self.cache["settings"]["font-family"])
+        self.settings.font_family.configure(command=self.check_settings_state)
         self.settings.heading_font_size.set(self.cache["settings"]["heading-font-size"])
+        self.settings.heading_font_size.configure(command=lambda value:self.settings.update_heading_font_label(value)
+                                                or self.check_settings_state())
         self.settings.body_font_size.set(self.cache["settings"]["body-font-size"])
+        self.settings.body_font_size.configure(command=lambda value:self.settings.update_body_font_label(value)
+                                               or self.check_settings_state())
         self.settings.heading_font_label.configure(text=f"{self.cache['settings']['heading-font-size']} pt")
         self.settings.body_font_label.configure(text=f"{self.cache['settings']['body-font-size']} pt")
-        self.settings.save.configure(command=self.save_settings)
-
-        self.note.tkraise()
+        self.settings.save.configure(command=self.save_settings,state="disabled")
         self.load_notes()
 
     def load_notes(self):
@@ -229,21 +262,32 @@ class App(ctk.CTk):
         self.noteframe.tkraise()
         self.noteframe.id=note_id
         self.noteframe.set_up(self.cache)
+        self.setting.configure(state="disabled")
 
     def new_note(self):
         self.add_note()
         self.open_note(self.cache["notes"][-1]["id"])
+        self.home.configure(state="disabled")
+        self.new.configure(state="disabled")
+        self.setting.configure(state="disabled")
 
     def save_note(self):
         self.noteframe.save_note(self.cache)
-        msg=tkm.showinfo("Note Saved","Your note has been saved successfully.")
+        self.home.configure(state="normal")
+        self.new.configure(state="normal")
+        self.setting.configure(state="normal")
 
     def to_home(self):
         self.load_notes()
         self.note.tkraise()
+        self.home.configure(state="disabled")
+        self.new.configure(state="normal")    
+        self.setting.configure(state="normal")
 
     def open_settings(self):
         self.settings.tkraise()
+        self.home.configure(state="normal")
+        self.new.configure(state="normal")
 
     def kill_children(self):
         for child in self.winfo_children():
@@ -261,3 +305,22 @@ class App(ctk.CTk):
         ctk.set_appearance_mode(self.cache["settings"]["theme"])
         self.load_widgets()
         self.settings.tkraise()
+        self.home.configure(state="normal")
+        self.settings.save.configure(state="disabled")
+
+    def check_settings_state(self,event=None):
+        state=[
+            self.cache["settings"]["theme"]==self.settings.theme.get(),
+            self.cache["settings"]["color-scheme"]==self.settings.color.get(),
+            self.cache["settings"]["font-family"]==self.settings.font_family.get(),
+            self.cache["settings"]["heading-font-size"]==int(self.settings.heading_font_size.get()),
+            self.cache["settings"]["body-font-size"]==int(self.settings.body_font_size.get())
+        ]
+        if all(state):
+            self.settings.save.configure(state="disabled")
+            self.home.configure(state="disabled")
+            self.new.configure(state="disabled")
+        else:
+            self.settings.save.configure(state="normal")
+            self.home.configure(state="normal")
+            self.new.configure(state="normal")
