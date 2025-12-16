@@ -176,6 +176,7 @@ class App(ctk.CTk):
         self.cache=read()
         self.geometry("800x600")
         self.title("Notebook")
+        self.iconbitmap("notepad.ico")
         self.resizable(False,False)
         ctk.set_default_color_theme(self.cache["settings"]["color-scheme"])
         ctk.set_appearance_mode(self.cache["settings"]["theme"])
