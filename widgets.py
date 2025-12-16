@@ -65,13 +65,13 @@ class FileFrame(ctk.CTkFrame):
         self.id=fileid
         self.kwargs=kwargs
 
-        self.title = ctk.CTkEntry(self,placeholder_text="Title", width=550, height=50, font=heading_font)
-        self.content = ctk.CTkTextbox(self, width=680, height=500, font=body_font, wrap="word")
+        self.title = ctk.CTkEntry(self,placeholder_text="Title", width=550, height=heading_font.metrics()["linespace"], font=heading_font)
+        self.content = ctk.CTkTextbox(self, width=680, height=kwargs["height"]-heading_font.metrics()["linespace"]-40, font=body_font, wrap="word")
         self.save_button = ctk.CTkButton(self, text="💾", width=50, height=50, font=ctk.CTkFont(size=29))
         self.delete_button = ctk.CTkButton(self, text="❌", width=50, height=50, font=ctk.CTkFont(size=29))
 
         self.title.place(x=10, y=10)
-        self.content.place(x=10, y=70)
+        self.content.place(x=10, y=heading_font.metrics()["linespace"]+30)
         self.save_button.place(x=570, y=10)
         self.delete_button.place(x=630, y=10)
 
