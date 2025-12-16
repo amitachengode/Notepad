@@ -164,6 +164,7 @@ class SettingsFrame(ctk.CTkFrame):
 
     def update_body_font_label(self,value):
         self.body_font_label.configure(text=f"{int(value)} pt")
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -233,6 +234,7 @@ class App(ctk.CTk):
         self.settings.body_font_label.configure(text=f"{self.cache['settings']['body-font-size']} pt")
         self.settings.save.configure(command=self.save_settings,state="disabled")
         self.load_notes()
+        self.to_home()
 
     def load_notes(self):
         for widget in self.scrollframe.winfo_children():
