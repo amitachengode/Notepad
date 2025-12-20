@@ -4,16 +4,16 @@ This a simple notepad created with `customtkinter` and `json` having a simple UI
 
 ## **Features**
 >
-> **Add notes**
+> **Add notes:**
 > you are able to add notes with title and content
 >
-> **Edit notes**
+> **Edit notes:**
 > you are able to view and edit notes
 >
-> **Delete notes**
+> **Delete notes:**
 > you are able to delete notes
 >
-> **Save notes**
+> **Save notes:**
 > you are able to save notes in a json file
 >
 
