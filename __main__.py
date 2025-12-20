@@ -3,6 +3,7 @@ from widgets import SettingsFrame, FileFrame, File
 from functions import get_timestamp, read, write
 
 cache=read()
+current_noteid=None
 
 class App(ctk.CTk):
     def __init__(self):
@@ -46,14 +47,15 @@ class App(ctk.CTk):
         self.note_title=ctk.CTkLabel(self.note,text="Notes",font=self.header_font)
         self.note_title.place(x=10,y=10)
 
-        self.scrollframe=ctk.CTkScrollableFrame(self.note,width=690,height=580,bg_color="transparent",fg_color="transparent",border_width=0)
+        self.scrollframe=ctk.CTkScrollableFrame(self.note,width=690,height=580,bg_color="transparent",fg_color="transparent",
+                                                border_width=0)
         self.scrollframe.place(x=0,y=90)
         self.scrollframe._scrollbar.configure(width=0)
 
-        self.noteframe=FileFrame(get_timestamp(),self,width=700,height=580,heading_font=self.header_font,body_font=self.body_font)
+        self.noteframe=FileFrame(self,width=700,height=580,heading_font=self.header_font,body_font=self.body_font)
         self.noteframe.place(x=90,y=10)
-        self.noteframe.save_button.configure(command=self.save_note)
-        self.noteframe.delete_button.configure(command=lambda:self.noteframe.delete_note(cache) or self.to_home())
+        self.noteframe.save_button.configure(command=lambda:self.save_note(current_noteid))
+        self.noteframe.delete_button.configure(command=lambda:self.noteframe.delete_note(cache,current_noteid) or self.to_home())
 
         self.settings=SettingsFrame(self,width=700,height=580,header_font=self.header_font,body_font=self.body_font)
         self.settings.place(x=90,y=10)
@@ -79,36 +81,39 @@ class App(ctk.CTk):
         for widget in self.scrollframe.winfo_children():
             widget.destroy()
         color=self.colormap[cache["settings"]["color-scheme"]]
-        for note in cache.get("notes",[]):
+        for noteid, note in cache.get("notes",{}).items():
             file_widget=File(note["title"],note["timestamp"],self.scrollframe,height=80,fg_color=color,corner_radius=10,)
             file_widget.pack(padx=10,pady=5,fill="x",)
-            file_widget.bind("<Button-1>",lambda event,note_id=note["id"]:self.open_note(note_id))
+            file_widget.bind("<Button-1>",lambda event:self.open_note(noteid))
 
-    def add_note(self):
+    def add_note(self,event=None):
+        current_noteid=get_timestamp()
         new_note={
-            "id":get_timestamp(),
+            "id":current_noteid,
             "title":"",
             "content":"",
             "timestamp":get_timestamp()
         }
-        cache["notes"].append(new_note)
+        cache["notes"][current_noteid]=new_note
         write(cache)
 
-    def open_note(self,note_id):
+    def open_note(self,noteid):
+        global current_noteid
+        current_noteid=noteid
         self.noteframe.tkraise()
-        self.noteframe.id=note_id
-        self.noteframe.set_up(cache)
+        self.noteframe.set_up(cache,noteid)
         self.setting.configure(state="disabled")
 
     def new_note(self):
+        global current_noteid
         self.add_note()
-        self.open_note(cache["notes"][-1]["id"])
+        self.open_note(cache["notes"][current_noteid]["id"])
         self.home.configure(state="disabled")
         self.new.configure(state="disabled")
         self.setting.configure(state="disabled")
 
-    def save_note(self):
-        self.noteframe.save_note(cache)
+    def save_note(self,noteid):
+        self.noteframe.save_note(cache,noteid)
         self.home.configure(state="normal")
         self.new.configure(state="normal")
         self.setting.configure(state="normal")

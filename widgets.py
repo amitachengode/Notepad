@@ -60,9 +60,8 @@ class File(ctk.CTkFrame):
         
 
 class FileFrame(ctk.CTkFrame):
-    def __init__(self, fileid:str, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, heading_font:ctk.CTkFont, body_font:ctk.CTkFont, **kwargs):
+    def __init__(self, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame, heading_font:ctk.CTkFont, body_font:ctk.CTkFont, **kwargs):
         super().__init__(master,**kwargs)
-        self.id=fileid
         self.kwargs=kwargs
 
         self.title = ctk.CTkEntry(self,placeholder_text="Title", width=550, height=heading_font.metrics()["linespace"], font=heading_font)
@@ -76,55 +75,37 @@ class FileFrame(ctk.CTkFrame):
         self.delete_button.place(x=630, y=10)
 
 
-    def save_note(self,cache):
-        for index,note in enumerate(cache["notes"]):
-            if note["id"] == self.id:
-                title, content = self.get_data()
-                if title == "" and content == "":
-                    if cache["notes"][index]["title"] == "" and cache["notes"][index]["content"] == "":
-                        tkm.showerror("New note", "Save the new note by providing a title or content.")
-                        del cache["notes"][index]
-                        write(cache)
-                    else:
-                        tkm.showinfo("Empty Note", "The note must have a title or content to be saved.")
-                elif title == "":
-                    tkm.showwarning("Missing Title", "Please provide a title for the note.")
-                    break
-                elif content == "":
-                    tkm.showwarning("Missing Content", "Please provide content for the note.")
-                    break
-                else:
-                    cache["notes"][index]["title"] = title
-                    cache["notes"][index]["content"] = content
-                    cache["notes"][index]["timestamp"] = get_timestamp()
-                    write(cache)
-                    tkm.showinfo("Note Saved", "The note has been saved successfully.")
-                    break
-                    
-
-
-    def delete_note(self,cache):
-        if tkm.askyesno("Delete Note", "Are you sure you want to delete this note?"):
-            cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
+    def save_note(self,cache,noteid):
+        title, content = self.get_data()
+        if title == "" and content == "":
+            tkm.showerror("New note", "Save the new note by providing a title or content.")
+            del cache["notes"][noteid]
             write(cache)
-            tkm.showinfo("Note Deleted", "The note has been deleted successfully.")
+        elif title == "":
+            tkm.showwarning("Missing Title", "Please provide a title for the note.")
+        elif content == "":
+            tkm.showwarning("Missing Content", "Please provide content for the note.")
         else:
-            if self.title.get()=="" and self.content.get("1.0", ctk.END).strip()=="":
-                cache["notes"]=[note for note in cache["notes"] if note["id"]!=self.id]
-                write(cache)
+            cache["notes"][noteid]["title"] = title
+            cache["notes"][noteid]["content"] = content
+            cache["notes"][noteid]["timestamp"] = get_timestamp()
+            write(cache)
+            tkm.showinfo("Note Saved", "The note has been saved successfully.")
+
+    def delete_note(self,cache,noteid):
+        if tkm.askyesno("Delete Note", "Are you sure you want to delete this note?"):
+            del cache["notes"][noteid]
+            write(cache)
     
     def get_data(self):
         return [self.title.get(), self.content.get("1.0", ctk.END).strip()]
 
-    def set_up(self, cache):
+    def set_up(self, cache, noteid):
         self.title.delete(0, ctk.END)
         self.content.delete("1.0", ctk.END) if cache["notes"] else None
-        for note in cache["notes"]:
-            if note["id"]==self.id:
-                self.title.insert(0, note["title"])
-                self.title.focus_set()
-                self.content.insert("1.0", note["content"])
-                break
+        note=cache["notes"][noteid]
+        self.title.insert(0, note["title"])
+        self.content.insert("1.0", note["content"])
 
 class SettingsFrame(ctk.CTkFrame):
     def __init__(self, master:ctk.CTk | ctk.CTkToplevel | ctk.CTkFrame,header_font:ctk.CTkFont,body_font:ctk.CTkFont, **kwargs):
